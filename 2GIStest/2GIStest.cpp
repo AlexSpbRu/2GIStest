@@ -5,8 +5,15 @@
 #include "Dispatcher.h"
 #include "StateMashine.h"
 
+
 int main(int argc, char* argv[])
 {
+
+	for (int i = 1; i < argc; ++i) {
+		std::cout << argv[i] << " ";
+	}
+	std::cout << "\n";
+
 	std::string path = argv[0];
 	path = path.substr(0, path.find_last_of('\\')+1);
 	CDispatcher<CTextFileReader>::func_type help_func =
@@ -71,12 +78,24 @@ int main(int argc, char* argv[])
 	stateMashine.setStates(std::string("start"), std::string("-h"), std::string("-f"), std::string("-v"), std::string("-mword"), std::string("-mchecksum") );
 	stateMashine.setCommands({ std::string("checksum"), std::string("word"), std::string("-f"), std::string("-h"), std::string("-v") });
 	
-	stateMashine.setTransitions( std::string("start"), std::string("-h"), std::string("-h"),
-		std::string("start"), std::string("-f"), std::string("-f"), std::string("-f"), std::string("-mchecksum"), std::string("checksum"),
-		std::string("start"), std::string("-f"), std::string("-f"), std::string("-f"), std::string("-mword"),  std::string("word"), std::string("-mword"), std::string("-v"), std::string("-v") );
+	stateMashine.setTransition(std::string("start"), std::string("-h"), std::string("-h"), std::string());
+
+	stateMashine.setTransition(std::string("start"), std::string("-f"), std::string("-f"), std::string());
+		stateMashine.setTransition(std::string("-f"), std::string("-mchecksum"), std::string("-m"), std::string("checksum"));
+
+	stateMashine.setTransition(std::string("start"), std::string("-f"), std::string("-f"), std::string());
+		stateMashine.setTransition(std::string("-f"), std::string("-mword"), std::string("-m"), std::string("word"));
+			stateMashine.setTransition(std::string("-mword"), std::string("-v"), std::string("-v"), std::string());
+	/*stateMashine.setTransitions( std::string("start"), std::string("-h"), std::string("-h"), std::string(),
+		std::string("start"), std::string("-f"), std::string("-f"),  std::string(),
+			std::string("-f"), std::string("-mchecksum"),  std::string("-m"), std::string("checksum"),
+		std::string("start"), std::string("-f"), std::string("-f"),   std::string(),
+			std::string("-f"), std::string("-mword"), std::string("-m"), std::string("word"),
+			std::string("-m"), std::string("-v"), std::string("-v"),  std::string() );*/
+
 	stateMashine.setStartState("start");
 
-	for (int i = 1; i < argc; ++i ) {
+	for (int i = 1; i < argc; ++i ) { 
 		std::string com;
 		std::string arg; 
 		if(argv[i][0] == '-')
@@ -87,7 +106,11 @@ int main(int argc, char* argv[])
 			arg = argv[i + 1];
 			++i;
 		}
-		dispatcher.ExecuteCommand(com, arg);
+		if (stateMashine.ProcessCommand(com, arg)) {
+			dispatcher.ExecuteCommand(com, arg);
+		}
+		else 
+			std::cout << " Error in command " << com.c_str() << "  " << arg.c_str() << "\n";
 	}
 	return 0;
  }

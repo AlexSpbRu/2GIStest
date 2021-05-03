@@ -25,7 +25,7 @@
 
 	unsigned int CFileReader::SeekWordInText(const std::string& Word)  const {
 		unsigned int offset = 0, count  = 0;
-		while ((offset = fileContentText.find_first_of(Word, offset)) != std::string::npos) {
+		while ((offset = fileContentText.find(Word, offset)) != std::string::npos) {
 			count++;
 			offset += Word.length();
 		}

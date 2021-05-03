@@ -7,14 +7,19 @@ protected:
 	State		startState;
 	State		stopState;
 	Command		command;
+	Command		argument;
 
 public:
 	CTransition() = default;
-	CTransition(const State& Start, const State& Stop, const Command& Comm) : startState(Start), stopState(Stop), command(Comm) {}
-	CTransition(const State&& Start, const State&& Stop, const Command&& Comm) : startState(Start), stopState(Stop), command(Comm) {}
-	State&		getStart() { return startState; }
-	State&		getStop() { return stopState; }
-	Command&	getCommand() { return command; }
+	CTransition(const State& Start, const State& Stop, const Command& Comm, const Command& Arg) : 
+		startState(Start), stopState(Stop), command(Comm), argument(Arg) {}
+	CTransition(const State&& Start, const State&& Stop, const Command&& Comm, const Command&& Arg) :
+		startState(Start), stopState(Stop), command(Comm), argument(Arg) {}
+
+	const State&		getStart()  const { return startState; }
+	const State&		getStop()  const { return stopState; }
+	const Command&		getCommand()  const { return command; }
+	const Command&		getArgument()  const { return argument; }
 };
 
 template <typename State, typename Command>
@@ -38,9 +43,9 @@ protected :
 	}
 
 	//-----------------------------------
-	template <int Pos, typename First, typename Second, typename Comm, typename... Args, 
-					class = std::enable_if_t<std::conjunction<std::is_same<State, First>, std::is_same<State, Second>, std::is_same<Command, Comm>>::value, void>>
-	void setTransition(First&& first, Second&& second, Comm && command, Args&&... args) {
+	template <int Pos, typename S, typename C, typename... Args, 
+					class = std::enable_if_t<std::conjunction< std::is_same<State, S>, std::is_same<Command, C>>::value, void>>
+	void setTransitionT(S&& first, S&& second, C&& command, C&& arg, Args&&... args) {
 		if(states.find(first) == states.end() )
 			std::cout << "Error : unknown state " << first << "\n";
 		if (states.find(second) == states.end())
@@ -48,20 +53,20 @@ protected :
 		if (commands.find(command) == commands.end())
 			std::cout << "Error : unknown command " << command << "\n";
 
-		transitions[Pos] = std::move(CTransition<First, Comm>(first, second, command));
-		setTransition<Pos + 1, Args... >(std::move(args)...);
+		transitions[Pos] = std::move(CTransition<S, C>(first, second, command, arg));
+		setTransitionT<Pos + 1, Args... >(std::move(args)...);
 	}
 
-	template <int Pos, typename First, typename Second, typename Comm,
-				class = std::enable_if_t<std::conjunction<std::is_same<State, First>, std::is_same<State, Second>, std::is_same<Command, Comm>>::value, void> >
-	void setTransition(First&& first, Second&& second, Comm && command) {
+	template <int Pos, typename S, typename C,
+				class = std::enable_if_t<std::conjunction<std::is_same<State, S>, std::is_same<Command, C>>::value, void> >
+	void setTransitionT(S&& first, S&& second, C&& command, C&& arg) {
 		if (states.find(first) == states.end())
 			std::cout << "Error : unknown state " << first << "\n";
 		if (states.find(second) == states.end())
 			std::cout << "Error : unknown state " << second << "\n";
 		if (commands.find(command) == commands.end())
 			std::cout << "Error : unknown command " << command << "\n";
-		transitions[Pos] = std::move(CTransition<First, Comm>(first, second, command));
+		transitions[Pos] = std::move(CTransition<S, C>(first, second, command, arg));
 	}
 
 public:
@@ -89,19 +94,34 @@ public:
 		}
 	}
 
-	//   There must be an even number of arguments. 
-	//	The first argument in the pair is the start state, the second is the stop state. 
-	template <typename ...Args, class = std::enable_if_t<are_same<State, Args...>::value, void>>
-	void	setTransitions(Args&& ... Transitions) {
-		constexpr auto size = sizeof...(Args);
-		static_assert(size%3 == 0, "Error : The number of arguments must be divisible by three in function setTransitions");
-		static_assert(size >= 3, "Error : setTransitions must have at least three arguments");
-		transitions.resize(size/2);
-		setTransition< 0, Args... >(std::move(Transitions)...);
+	void setTransition(State&& start, State&& stop, Command&& command, Command&& arg) {
+		transitions.emplace_back(start, stop, command, arg);
 	}
 
-	bool ProcessCommand(const Command& Command) {
+	//   The number of arguments must be divisible by four in function. 
+	//	The first argument in the pair is the start state, the second is the stop state ... 
+	template <typename ...Args/*, class = std::enable_if_t<are_same<State, Args...>::value, void>*/>
+	void	setTransitions(Args&& ... Transitions) {
+		constexpr auto size = sizeof...(Args);
+		static_assert(size%4 == 0, "Error : The number of arguments must be divisible by four in function setTransitions");
+		static_assert(size >= 4, "Error : setTransitions must have at least four arguments");
+		transitions.resize(size/4);
+		setTransitionT< 0, Args... >(std::move(Transitions)...);
+	}
 
+	State&		getCurrentState() const { return   currentState; }
+
+ 	bool ProcessCommand(const Command& command, const Command& argument) {
+		auto st = currentState;
+		auto trans = std::find_if(transitions.begin(), transitions.end(),
+			[&st, &command, &argument](const CTransition<State, Command>& tr)->bool {
+				return tr.getStart() == st && tr.getCommand() == command && (tr.getArgument() == Command() || argument == tr.getArgument());
+		} );
+		if (trans != transitions.end()) {
+			currentState = trans->getStop();
+			return true;
+		} 
+		else return false;
 	}
 
 protected:
@@ -112,6 +132,6 @@ protected:
 
 	std::set<Command>	commands;
 
-	std::vector< CTransition<State, Command> >	transitions;
+	std::vector< CTransition< State, Command > >	transitions;
 };
 
