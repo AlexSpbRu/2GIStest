@@ -5,6 +5,14 @@
 #include "Dispatcher.h"
 #include "StateMashine.h"
 
+enum class EState {
+	Start,
+	Help,
+	File,
+	Word,
+	V,
+	Checksum
+};
 
 int main(int argc, char* argv[])
 {
@@ -18,7 +26,13 @@ int main(int argc, char* argv[])
 	path = path.substr(0, path.find_last_of('\\')+1);
 	CDispatcher<CTextFileReader>::func_type help_func =
 		[](CDispatcher<CTextFileReader>::exec_type& executor, std::string&) {
-			std::cout << "--------------HELP---------------------------.\n";
+			std::cout << "************************************************\n";
+			std::cout << "***  2GIStest - simple text processor.       ***\n";
+			std::cout << "***  Version 1.1                             ***\n";
+			std::cout << "***  GNU General Public License              ***\n";
+			std::cout << "***  Author : Kozlov Aleksey                 ***\n";
+			std::cout << "************************************************\n\n";
+			std::cout << "                 HELP.\n";
 			std::cout << "-f fileName  - open file with name - fileName.\n";
 			std::cout << "-m command   - execute command witt name - command.\n";
 			std::cout << "                     Variants of commands:\n";
@@ -58,7 +72,7 @@ int main(int argc, char* argv[])
 		[](CDispatcher<CTextFileReader>::exec_type& executor, std::string& word) {
 		if (bool(executor)) {
 			auto count = executor->SeekWordInText(word);
-			std::cout << "The word " << word << " was found " << count << "  times.\n";
+			std::cout << "The word " << word << " was founded " << count << "  times.\n";
 		}
 		else {
 			std::cout << "The file did not open.\n";
@@ -69,23 +83,24 @@ int main(int argc, char* argv[])
 										CDispatcher<CTextFileReader>::data_type(std::string("-f"), open_file_func),
 										CDispatcher<CTextFileReader>::data_type(std::string("-m"), command_func),
 										CDispatcher<CTextFileReader>::data_type(std::string("-v"), seekWord_func));
-	CDispatcher<CTextFileReader> dispatcher2({ CDispatcher<CTextFileReader>::data_type(std::string("-h"), help_func),
+	/*CDispatcher<CTextFileReader> dispatcher2({ CDispatcher<CTextFileReader>::data_type(std::string("-h"), help_func),
 		CDispatcher<CTextFileReader>::data_type(std::string("-f"), open_file_func),
 		CDispatcher<CTextFileReader>::data_type(std::string("-m"), command_func),
-		CDispatcher<CTextFileReader>::data_type(std::string("-v"), seekWord_func) });
+		CDispatcher<CTextFileReader>::data_type(std::string("-v"), seekWord_func) });*/
 
-	CStateMashine<std::string, std::string>		stateMashine;
-	stateMashine.setStates(std::string("start"), std::string("-h"), std::string("-f"), std::string("-v"), std::string("-mword"), std::string("-mchecksum") );
+	CStateMashine<EState, std::string>		stateMashine;
+	stateMashine.setStates(EState::Start, EState::Help,  EState::File, EState::Word, EState::V, EState::Checksum);
+
 	stateMashine.setCommands({ std::string("checksum"), std::string("word"), std::string("-f"), std::string("-h"), std::string("-v") });
 	
-	stateMashine.setTransition(std::string("start"), std::string("-h"), std::string("-h"), std::string());
+	stateMashine.setTransition(EState::Start, EState::Help, std::string("-h"), std::string());
 
-	stateMashine.setTransition(std::string("start"), std::string("-f"), std::string("-f"), std::string());
-		stateMashine.setTransition(std::string("-f"), std::string("-mchecksum"), std::string("-m"), std::string("checksum"));
+	stateMashine.setTransition(EState::Start, EState::File, std::string("-f"), std::string());
+		stateMashine.setTransition(EState::File, EState::Checksum, std::string("-m"), std::string("checksum"));
 
-	stateMashine.setTransition(std::string("start"), std::string("-f"), std::string("-f"), std::string());
-		stateMashine.setTransition(std::string("-f"), std::string("-mword"), std::string("-m"), std::string("word"));
-			stateMashine.setTransition(std::string("-mword"), std::string("-v"), std::string("-v"), std::string());
+	stateMashine.setTransition(EState::Start, EState::File, std::string("-f"), std::string());
+		stateMashine.setTransition(EState::File, EState::Word, std::string("-m"), std::string("word"));
+			stateMashine.setTransition(EState::Word, EState::V, std::string("-v"), std::string());
 	/*stateMashine.setTransitions( std::string("start"), std::string("-h"), std::string("-h"), std::string(),
 		std::string("start"), std::string("-f"), std::string("-f"),  std::string(),
 			std::string("-f"), std::string("-mchecksum"),  std::string("-m"), std::string("checksum"),
@@ -93,7 +108,7 @@ int main(int argc, char* argv[])
 			std::string("-f"), std::string("-mword"), std::string("-m"), std::string("word"),
 			std::string("-m"), std::string("-v"), std::string("-v"),  std::string() );*/
 
-	stateMashine.setStartState("start");
+	stateMashine.setStartState(EState::Start);
 
 	for (int i = 1; i < argc; ++i ) { 
 		std::string com;

@@ -80,7 +80,7 @@ public:
 		}
 	}
 
-	template <typename ...Args>
+	template <typename ...Args, class = std::enable_if_t< are_same<State, Args...>::value, void> >
 	void	setStates(Args&& ... States) {
 		constexpr auto size = sizeof...(Args);
 		static_assert(size != 0, "Error : setStates must have at least one argument");
