@@ -43,9 +43,9 @@ protected :
 	}
 
 	//-----------------------------------
-	template <int Pos, typename S, typename S1, typename C, typename C1, typename... Args/*,
-					class = std::enable_if_t<std::conjunction< std::is_same<State, S>, std::is_same<Command, C>>::value, void>*/>
-	void setTransitionT(S start, S1 stop, C command, C1 arg, Args... args) {
+	template <int Pos, typename S, typename S1, typename C, typename C1, typename... Args,
+					class = std::enable_if_t<std::conjunction< std::is_same<State, S>, std::is_same<State, S1>, std::is_same<Command, C>, std::is_same<Command, C1>>::value, void>>
+	void setTransitionT(S&& start, S1&& stop, C&& command, C1&& arg, Args&&... args) {
 		if(states.find(start) == states.end() || states.find(stop) == states.end())
 			std::cout << "Error : unknown state  in method setTransition\n";
 		if (commands.find(command) == commands.end())
@@ -55,9 +55,9 @@ protected :
 		setTransitionT<Pos + 1, Args... >(std::move(args)...);
 	}
 
-	template <int Pos, typename S, typename S1, typename C, typename C1/*,
-				class = std::enable_if_t<std::conjunction<std::is_same<State, S>, std::is_same<Command, C>>::value, void>*/ >
-	void setTransitionT(S start, S1 stop, C command, C1 arg) {
+	template <int Pos, typename S, typename S1, typename C, typename C1,
+				class = std::enable_if_t<std::conjunction<std::is_same<State, S>, std::is_same<State, S1>, std::is_same<Command, C>, std::is_same<Command, C1>>::value, void> >
+	void setTransitionT(S&& start, S1&& stop, C&& command, C1&& arg) {
 		if (states.find(start) == states.end() || states.find(stop) == states.end())
 			std::cout << "Error : unknown state in method setTransition\n";
 		if (commands.find(command) == commands.end())
@@ -96,13 +96,13 @@ public:
 
 	//   The number of arguments must be divisible by four in function. 
 	//	The first argument in the pair is the start state, the second is the stop state ... 
-	template <typename ...Args/*, class = std::enable_if_t<are_same<State, Args...>::value, void>*/>
-	void	setTransitions(Args ... args) {
+	template <typename ...Args>
+	void	setTransitions(Args&& ... args) {
 		constexpr auto size = sizeof...(Args);
 		static_assert(size%4 == 0, "Error : The number of arguments must be divisible by four in function setTransitions");
 		static_assert(size >= 4, "Error : setTransitions must have at least four arguments");
 		transitions.resize(size/4);
-		setTransitionT< 0, Args... >(/*std::move(Transitions)...*/args...);
+		setTransitionT< 0, Args... >(std::move(args)...);
 	}
 
 	State&		getCurrentState() const { return   currentState; }

@@ -40,7 +40,6 @@ int main(int argc, char* argv[])
 			std::cout << "               words - count how many times a word was in the file which was opened by command -f\n";
 			std::cout << "-v word      - search word.\n";
 			std::cout << "-h           - show hint.\n";
-			std::cout << "---------------------------------------------.\n";
 		};
 
 	CDispatcher<CTextFileReader>::func_type open_file_func =
