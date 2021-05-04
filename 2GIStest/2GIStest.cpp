@@ -5,13 +5,13 @@
 #include "Dispatcher.h"
 #include "StateMashine.h"
 
-enum class EState {
-	Start,
-	Help,
-	File,
-	Word,
-	V,
-	Checksum
+enum class EState : char {
+	Start = 'S',
+	Help = 'H',
+	File = 'F',
+	Word = 'W',
+	V = 'V',
+	Checksum = 'C'
 };
 
 int main(int argc, char* argv[])
@@ -91,22 +91,22 @@ int main(int argc, char* argv[])
 	CStateMashine<EState, std::string>		stateMashine;
 	stateMashine.setStates(EState::Start, EState::Help,  EState::File, EState::Word, EState::V, EState::Checksum);
 
-	stateMashine.setCommands({ std::string("checksum"), std::string("word"), std::string("-f"), std::string("-h"), std::string("-v") });
+	stateMashine.setCommands({ std::string("-m"), std::string("-f"), std::string("-h"), std::string("-v") });
 	
-	stateMashine.setTransition(EState::Start, EState::Help, std::string("-h"), std::string());
+	/*stateMashine.setTransition(EState::Start, EState::Help, std::string("-h"), std::string());
 
 	stateMashine.setTransition(EState::Start, EState::File, std::string("-f"), std::string());
 		stateMashine.setTransition(EState::File, EState::Checksum, std::string("-m"), std::string("checksum"));
 
 	stateMashine.setTransition(EState::Start, EState::File, std::string("-f"), std::string());
 		stateMashine.setTransition(EState::File, EState::Word, std::string("-m"), std::string("word"));
-			stateMashine.setTransition(EState::Word, EState::V, std::string("-v"), std::string());
-	/*stateMashine.setTransitions( std::string("start"), std::string("-h"), std::string("-h"), std::string(),
-		std::string("start"), std::string("-f"), std::string("-f"),  std::string(),
-			std::string("-f"), std::string("-mchecksum"),  std::string("-m"), std::string("checksum"),
-		std::string("start"), std::string("-f"), std::string("-f"),   std::string(),
-			std::string("-f"), std::string("-mword"), std::string("-m"), std::string("word"),
-			std::string("-m"), std::string("-v"), std::string("-v"),  std::string() );*/
+			stateMashine.setTransition(EState::Word, EState::V, std::string("-v"), std::string());*/
+	stateMashine.setTransitions( EState::Start, EState::Help, std::string("-h"), std::string(),
+		EState::Start, EState::File, std::string("-f"), std::string(),
+			EState::File, EState::Checksum, std::string("-m"), std::string("checksum"),
+		EState::Start, EState::File, std::string("-f"), std::string(),
+			 EState::File, EState::Word, std::string("-m"), std::string("word"),
+			 EState::Word, EState::V, std::string("-v"), std::string() );
 
 	stateMashine.setStartState(EState::Start);
 
