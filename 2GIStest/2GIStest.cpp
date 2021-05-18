@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
 	std::string path = argv[0];
 	path = path.substr(0, path.find_last_of('\\')+1);
 	CDispatcher<CTextFileReader>::func_type help_func =
-		[](CDispatcher<CTextFileReader>::exec_type& executor, std::string&) {
+		[](CDispatcher<CTextFileReader>::exec_type& , std::string&) {
 			std::cout << "************************************************\n";
 			std::cout << "***  2GIStest - simple text processor.       ***\n";
 			std::cout << "***  Version 1.1                             ***\n";

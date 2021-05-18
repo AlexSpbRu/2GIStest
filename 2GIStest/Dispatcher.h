@@ -14,19 +14,21 @@ protected :
 	exec_type					executor;
 	std::vector<data_type>		commands;
 
+#if __cplusplus < 201703L
 	template <typename Head, typename... Args>
-	void InitCommandsList(Head& head, Args&... args) {
+	void InitCommandsList(Head&& head, Args&&... args) {
 		commands.emplace_back(head);
-		InitCommandsList< Args... >( args...);
+		InitCommandsList< Args... >(std::forward<Args>(args)...); 
 	}
 
 	template <typename Head>
-	void InitCommandsList(Head& head) {
+	void InitCommandsList(Head&& head) {
 		commands.emplace_back(head);
 	}
+#endif
 public :
 	
-	CDispatcher(std::initializer_list< data_type >&  Commands) {
+	CDispatcher(const std::initializer_list< data_type >&  Commands) {
 		commands.resize(Commands.size());
 		int pos = 0;
 		for (auto& comm : Commands) {
@@ -38,8 +40,13 @@ public :
 	using are_same = std::conjunction<std::is_same<data_type, Args>...>;
 
 	template <typename... Args, class = std::enable_if_t<are_same<Args...>::value, void>>
-	CDispatcher(Args... args) {
-		InitCommandsList< Args... >(args...);
+	CDispatcher(Args&&... args) {
+#if __cplusplus >= 201703L
+		(commands.emplace_back(std::forward<Args>(args)), ...);
+#else
+		InitCommandsList< Args... >(std::forward<Args>(args)...);
+#endif
+	
 	}
 
 	void ExecuteCommand(std::string& Command, std::string& Arg) {

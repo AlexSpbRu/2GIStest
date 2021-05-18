@@ -29,22 +29,25 @@ public :
 	template<typename T, typename... Args>
 	using are_same = std::conjunction<std::is_same<T, Args>...>;
 
+	template< typename S, typename S1, typename C, typename C1>
+	using check_param_type = std::conjunction< std::is_same<State, S>, std::is_same<State, S1>, std::is_same<Command, C>, std::is_same<Command, C1>>;
+
 protected :
 	//-----------------------------------
 	template < typename Head, typename... Args>
 	void setState(Head&& head, Args&&... args) {
-		states.emplace(std::move(head));
-		setState< Args... >( std::move(args)...);
+		states.emplace(std::forward<Head>(head));
+		setState< Args... >( std::forward<Args>(args)...);
 	}
 
 	template < typename Head>
 	void setState(Head&& head) {
-		states.emplace(std::move(head));
+		states.emplace(std::forward<Head>(head));
 	}
 
 	//-----------------------------------
 	template <int Pos, typename S, typename S1, typename C, typename C1, typename... Args,
-					class = std::enable_if_t<std::conjunction< std::is_same<State, S>, std::is_same<State, S1>, std::is_same<Command, C>, std::is_same<Command, C1>>::value, void>>
+					class = std::enable_if_t< check_param_type<S, S1, C, C1>::value, void > >
 	void setTransitionT(S&& start, S1&& stop, C&& command, C1&& arg, Args&&... args) {
 		if(states.find(start) == states.end() || states.find(stop) == states.end())
 			std::cout << "Error : unknown state  in method setTransition\n";
@@ -52,11 +55,11 @@ protected :
 			std::cout << "Error : unknown command  in method setTransition\n";
 
 		transitions[Pos] = std::move(CTransition<S, C>(start, stop, command, arg));
-		setTransitionT<Pos + 1, Args... >(std::move(args)...);
+		setTransitionT<Pos + 1, Args... >(std::forward<Args>(args)...);
 	}
 
 	template <int Pos, typename S, typename S1, typename C, typename C1,
-				class = std::enable_if_t<std::conjunction<std::is_same<State, S>, std::is_same<State, S1>, std::is_same<Command, C>, std::is_same<Command, C1>>::value, void> >
+				   class = std::enable_if_t<check_param_type<S, S1, C, C1>::value, void> >
 	void setTransitionT(S&& start, S1&& stop, C&& command, C1&& arg) {
 		if (states.find(start) == states.end() || states.find(stop) == states.end())
 			std::cout << "Error : unknown state in method setTransition\n";
@@ -70,7 +73,7 @@ public:
 		currentState = startState;
 	}
 
-	void	setStates(std::initializer_list< State >&&  States) {
+	void	setStates(const std::initializer_list< State >&  States) {
 		for (auto& state : States) {
 			states.emplace(std::move(state));
 		}
@@ -80,11 +83,11 @@ public:
 	void	setStates(Args&& ... States) {
 		constexpr auto size = sizeof...(Args);
 		static_assert(size != 0, "Error : setStates must have at least one argument");
-		setState< Args... >(std::move(States)...);
+		setState< Args... >(std::forward<Args>(States)...);
 	}
 
 	//  Only one variant of setting Commands
-	void	setCommands(std::initializer_list< Command >&&  Commands) {
+	void	setCommands(const std::initializer_list< Command >&  Commands) {
 		for (auto& command : Commands) {
 			commands.emplace(std::move(command));
 		}
@@ -102,7 +105,7 @@ public:
 		static_assert(size%4 == 0, "Error : The number of arguments must be divisible by four in function setTransitions");
 		static_assert(size >= 4, "Error : setTransitions must have at least four arguments");
 		transitions.resize(size/4);
-		setTransitionT< 0, Args... >(std::move(args)...);
+		setTransitionT< 0, Args... >(std::forward<Args>(args)...);
 	}
 
 	State&		getCurrentState() const { return   currentState; }
@@ -121,8 +124,6 @@ public:
 	}
 
 protected:
-	bool				started = false;
-
 	std::set<State>		states;
 	State				currentState;
 

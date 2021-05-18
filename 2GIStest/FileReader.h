@@ -4,18 +4,24 @@
 class CFileReader
 {
 protected :
-	std::ifstream	fin;
-	std::string		fileContentText;
-	std::string		seekText;
+	std::ifstream				fin;
+	std::string					fileContentText;
+	std::vector<std::uint8_t>	data;
+	void*						vdata = nullptr;
+	uint32_t					dataSize = 0u;
 
-	bool			seek = false;
-	bool			calcCheckSumm = false;
-	mutable unsigned int	checkSumm = 0;
+	std::string					seekText;
+
+	bool						seek = false;
+	bool						calcCheckSumm = false;
+	mutable uint32_t			checkSumm = 0;
 public :
 	CFileReader(const std::string& FileName);
+	CFileReader() = default;
 	virtual ~CFileReader() {}
 
 	virtual void			ReadTextFromFile(std::ifstream& file) = 0;
+	virtual void			ReadTextFromFile(const std::string& FileName) = 0;
 	virtual unsigned int	CheckSumm() const;
 	void					SetSeek() { seek = true; }
 	bool					GetSeek() const { return seek; }
@@ -36,17 +42,8 @@ public:
 	CTextFileReader(const std::string& FileName);
 	virtual ~CTextFileReader() {}
 
-	virtual void ReadTextFromFile(std::ifstream& file);
+	virtual void ReadTextFromFile(std::ifstream& file) override;
+	virtual void ReadTextFromFile(const std::string& FileName) override;
 };
 
 
-//  Class for processing  XML  files with text . (future purpose ... ) 
-
-class CXMLFileReader : public CFileReader
-{
-public:
-	CXMLFileReader(const std::string& FileName) : CFileReader(FileName) {};
-	virtual ~CXMLFileReader() {}
-
-	virtual void ReadTextFromFile() {}
-};
